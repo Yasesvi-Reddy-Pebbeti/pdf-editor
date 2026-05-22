@@ -18,7 +18,9 @@ export async function callApi(endpoint, formData, onProgress) {
   try {
     const res = await axios.post(url, formData, {
       responseType: 'blob',
-      headers: { 'Content-Type': 'multipart/form-data' },
+      // ✅ Do NOT set Content-Type manually — axios sets it automatically
+      // with the correct multipart boundary when given a FormData object.
+      // Setting it manually strips the boundary and breaks file uploads.
       onUploadProgress: (e) => {
         if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 50));
       },
@@ -37,11 +39,25 @@ export async function callApi(endpoint, formData, onProgress) {
 
     return res;
   } catch (err) {
+    // Network-level failure (backend unreachable)
     if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
-      throw new Error(
-        `Cannot reach the backend server.\n\nURL tried: ${url}\n\nCheck that:\n1. VITE_API_URL is set in Vercel environment variables\n2. Your Railway backend is running\n3. You redeployed Vercel after setting the env var`
-      );
+      throw new Error('Cannot reach the backend. Check VITE_API_URL in Vercel environment variables.');
     }
+
+    // Server responded with a non-2xx status — try to read the error body
+    if (err.response?.data instanceof Blob) {
+      try {
+        const text = await err.response.data.text();
+        const json = JSON.parse(text);
+        throw new Error(json.error || `Server error ${err.response.status}`);
+      } catch (inner) {
+        // If inner is our own error, re-throw it
+        if (inner.message !== `Server error ${err.response?.status}` && !inner.message.includes('JSON')) {
+          throw inner;
+        }
+      }
+    }
+
     throw err;
   }
 }

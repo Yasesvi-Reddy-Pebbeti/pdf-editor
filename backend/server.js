@@ -12,6 +12,12 @@ app.options('*', cors()); // Explicitly handle all preflight OPTIONS requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Log every incoming request — visible in Railway deployment logs
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} — Content-Type: ${req.headers['content-type'] || 'none'}`);
+  next();
+});
+
 // Ensure temp directories exist
 const dirs = [
   path.join(__dirname, 'uploads'),
