@@ -6,15 +6,9 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Allow requests from the Vercel frontend (or all origins in dev)
-const corsOptions = {
-  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Handle all preflight OPTIONS requests
+// Open CORS — allow all origins (required for Vercel ↔ Railway cross-domain requests)
+app.use(cors());
+app.options('*', cors()); // Explicitly handle all preflight OPTIONS requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -62,6 +56,16 @@ app.get('/', (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// 404 catch-all — tells you exactly what URL was hit so you can debug
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Route not found',
+    method: req.method,
+    path: req.path,
+    hint: `Valid routes are POST /api/merge, /api/split, /api/compress, etc.`,
+  });
+});
 
 // Periodic cleanup of temp files older than 1 hour
 setInterval(() => {
