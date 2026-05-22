@@ -6,11 +6,15 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// In production set FRONTEND_URL=https://your-app.vercel.app
-app.use(cors({
+// Allow requests from the Vercel frontend (or all origins in dev)
+const corsOptions = {
   origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : '*',
-  methods: ['GET', 'POST'],
-}));
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle all preflight OPTIONS requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
