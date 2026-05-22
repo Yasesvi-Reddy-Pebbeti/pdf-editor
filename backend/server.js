@@ -38,6 +38,28 @@ app.use('/api/organize', require('./routes/organize'));
 app.use('/api/pdf-to-image', require('./routes/pdfToImage'));
 app.use('/api/image-to-pdf', require('./routes/imageToPdf'));
 
+// Root route — confirms the API is live
+app.get('/', (req, res) => {
+  res.json({
+    name: 'PDFEditor API',
+    status: 'running',
+    version: '1.0.0',
+    endpoints: [
+      'POST /api/merge',
+      'POST /api/split',
+      'POST /api/compress',
+      'POST /api/rotate',
+      'POST /api/watermark',
+      'POST /api/protect',
+      'POST /api/unlock',
+      'POST /api/page-numbers',
+      'POST /api/organize',
+      'POST /api/pdf-to-image',
+      'POST /api/image-to-pdf',
+    ],
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
